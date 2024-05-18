@@ -169,3 +169,24 @@ def chat(message: str, history: list) -> str:
         return generate_response('여자', message, history)
     else:
         return generate_response(None, message, history)
+
+
+
+retry_btn_text = "다시보내기"
+undo_btn_text = "이전 챗 삭제"
+clear_btn_text = "전체 삭제"
+
+with gr.Blocks(theme=gr.themes.Soft()) as demo:
+    chatbot = gr.ChatInterface(
+        fn=chat,
+        head=gr.HTML(css_style + html_content),
+        theme="soft",
+        examples=[],
+        retry_btn=retry_btn_text,
+        undo_btn=undo_btn_text,
+        clear_btn=clear_btn_text,
+    )
+    chatbot.chatbot.height = 500
+
+
+demo.launch(share=True)
