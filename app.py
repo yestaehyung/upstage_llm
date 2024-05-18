@@ -41,33 +41,9 @@ vectorstore = Chroma.from_documents(
 )
 
 retriever = vectorstore.as_retriever()
-retriever = vectorstore.as_retriever()
 
-# More general chat
-chat_with_history_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", "너는 사용자의 정보를 받아 옷을 추천해 주는 에이전트야"),
-        MessagesPlaceholder(variable_name="history"),
-        ("human", "{message}"),
-    ]
-)
 
-chain = chat_with_history_prompt | llm | StrOutputParser()
 
-def chat(message, history):
-    history_langchain_format = [] # 사용자가 입력한 것과 ai 가 답한 것을 저장함
-    for human, ai in history:
-        print(human, ai)
-        history_langchain_format.append(HumanMessage(content=human))
-        history_langchain_format.append(AIMessage(content=ai))
-
-    generator = chain.stream({"message": message, "history": history_langchain_format})
-
-    assistant = ""
-    for gen in generator:
-        print("temp", gen)
-        assistant += gen
-        yield assistant
 
 html_content = """
 <div class="header">
@@ -123,8 +99,16 @@ css_style = """
 
 system_prompt = """너는 상황/분위기/옷을 추천해 주는 에이전트야, 우선 성별/장소/스타일을 물어봐줘
 
-답변을 할 때 검색되어 나온 결과를 참고해줘
-검색 결과: {content}"""
+답변을 할 때 검색되어 나온 결과는 다양한 상품에 대한 리뷰야, 리뷰 안에는 상품명과 상품리뷰로 구성되어 있어
+검색 결과를 참고하여, 상품명과 추천하는 이유를 알려줘
+
+검색 결과: {content}
+
+출력예시
+- 상품명: 샤랄라 블라우스
+- 관련 상품 링크: https://search.shopping.naver.com/search/all?query=상품명
+- 추천하는 이유: 이 블라우스는 여름에 입기 좋은 소재로 제작되었어요
+"""
 
 def generate_response(gender: str, message: str, history: list) -> str:
     if gender:
@@ -133,10 +117,11 @@ def generate_response(gender: str, message: str, history: list) -> str:
         prompt = system_prompt
     
     result_docs = retriever.invoke(message)
+    print(result_docs)
     
     chat_with_history_prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", prompt.format(content="result_docs")),
+            ("system", prompt.format(content=result_docs)),
             MessagesPlaceholder(variable_name="history"),
             ("human", "{message}"),
         ]
